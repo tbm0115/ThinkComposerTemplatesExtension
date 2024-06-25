@@ -1,0 +1,27 @@
+{
+    "If Statement": {
+        "prefix": "if",
+        "body": [
+            "{% if ${1:condition} %}",
+            "  ${0}",
+            "{% endif %}"
+        ],
+        "description": "If statement"
+    },
+    "For Loop": {
+        "prefix": "for",
+        "body": [
+            "{% for ${1:item} in ${2:collection} %}",
+            "  ${0}",
+            "{% endfor %}"
+        ],
+        "description": "For loop"
+    },
+    "Assign": {
+        "prefix": "assign",
+        "body": [
+            "{% assign ${1:variable} = ${2:value} %}"
+        ],
+        "description": "Assign a value to a variable"
+    }
+}

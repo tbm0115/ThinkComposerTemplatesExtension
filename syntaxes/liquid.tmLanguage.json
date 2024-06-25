@@ -1,0 +1,24 @@
+{
+    "fileTypes": ["liquid"],
+    "name": "Liquid",
+    "scopeName": "source.liquid",
+    "patterns": [
+        {
+            "include": "#expressions"
+        }
+    ],
+    "repository": {
+        "expressions": {
+            "patterns": [
+                {
+                    "name": "variable.other.liquid",
+                    "match": "\\{\\{.*?\\}\\}"
+                },
+                {
+                    "name": "keyword.control.liquid",
+                    "match": "\\{%.*?%\\}"
+                }
+            ]
+        }
+    }
+}
