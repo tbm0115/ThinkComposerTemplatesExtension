@@ -1,3 +1,4 @@
+
 {
     "fileTypes": ["liquid"],
     "name": "Liquid",
@@ -12,11 +13,47 @@
             "patterns": [
                 {
                     "name": "variable.other.liquid",
-                    "match": "\\{\\{.*?\\}\\}"
+                    "match": "\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}"
                 },
                 {
                     "name": "keyword.control.liquid",
-                    "match": "\\{%.*?%\\}"
+                    "match": "\{\%\s*(end)?(if|for|assign|capture|case|when|else|elsif|include|comment|declare)\s*.*?\s*\%\}"
+                },
+                {
+                    "name": "string.quoted.double.liquid",
+                    "match": "".*?""
+                },
+                {
+                    "name": "string.quoted.single.liquid",
+                    "match": "'.*?'"
+                },
+                {
+                    "name": "constant.numeric.liquid",
+                    "match": "\b\d+\b"
+                },
+                {
+                    "name": "comment.block.liquid",
+                    "begin": "\{\%\s*comment\s*\%\}",
+                    "end": "\{\%\s*endcomment\s*\%\}",
+                    "captures": {
+                        "0": {
+                            "name": "punctuation.definition.comment.liquid"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "name": "comment.block.liquid",
+                            "match": ".+"
+                        }
+                    ]
+                },
+                {
+                    "name": "entity.name.function.liquid",
+                    "match": "\b(append|capitalize|downcase|escape|escape_once|lstrip|newline_to_br|prepend|remove|remove_first|replace|replace_first|rstrip|slice|split|strip|strip_html|strip_newlines|truncate|truncatewords|upcase)\b"
+                },
+                {
+                    "name": "support.function.liquid",
+                    "match": "\b(size|first|last|map|sort|uniq|compact|reverse|join|merge|where|select|reject|pluck|concat|to_json|to_number|date|default|format_date|url_decode|url_encode)\b"
                 }
             ]
         }

@@ -51,6 +51,24 @@ export const thinkComposerModel = [
         }
     },
     {
+        name: 'ConceptDefinition',
+        ancestor: 'IdeaDefinition',
+        properties: {
+            'AncestorConceptDef': { type: 'ConceptDefinition', summary: 'References the ancestor Concept definition of this one.' },
+            'AutomaticCreationConceptDef': { type: 'ConceptDefinition', summary: 'Definition of the Concept to be automatically created.' },
+            'AutomaticCreationPositioningIsRadialized': { type: 'Boolean', summary: 'Indicates to position automatically created Concepts around in a radial (semi elliptical) style.' },
+            'AutomaticCreationRelationshipDef': { type: 'Boolean', summary: 'Definition of the Relationship to associate Concepts with the automatically created ones.' },
+            'Pictogram': { type: 'ImageSource', summary: 'Graphic representation of the object.' },
+        }
+    },
+    {
+        name: 'ConceptVisualRepresentation',
+        ancestor: 'VisualRepresentation',
+        properties: {
+            'RepresentedConcept': { type: 'Concept', summary: 'Represented Concept by this visual element.' }
+        }
+    },
+    {
         name: 'ContainedDetail',
         ancestor: null,
         properties: {
@@ -103,6 +121,13 @@ export const thinkComposerModel = [
             'TechName': { type: 'String', summary: 'Technical-Name of the object. Should be unique. Intended for machine-level usage as code, identifier or name for files/tables/programs' },
             'TechSpec': { type: 'String', summary: 'Technical-Specification of the object. Intended as a machine-level representation for computation (i.e. for use as script, template, formula or other kind of expression)' },
             'Version': { type: 'VersionCard', summary: 'Stores the versioning information of the object, such as Creator, Last-Modifier, dates and version number' }
+        }
+    },
+    {
+        name: 'FormalPresentationElement',
+        ancestor: 'FormalElement',
+        properties: {
+            'Pictogram': { type: 'ImageSource', summary: 'Graphic representation of the object.' }
         }
     },
     {
@@ -166,6 +191,14 @@ export const thinkComposerModel = [
         }
     },
     {
+        name: 'InternalLink',
+        ancestor: 'Link',
+        properties: {
+            'AssignedDesignator': { type: 'Assignment<DetailDesignator>', summary: 'Link assigned designator' },
+            'Designator': { type: 'LinkDetailDesignator', summary: 'Internal-Link assigned designator.' }
+        }
+    },
+    {
         name: 'Link',
         ancestor: 'ContainedDetail',
         properties: {
@@ -173,6 +206,13 @@ export const thinkComposerModel = [
             'Designator': { type: 'LinkDetailDesignator', summary: 'Internal-Link assigned designator' },
             'Kind': { type: 'ModelDefinition', summary: 'Returns the kind of this detail' },
             'TargetAddress': { type: 'String', summary: 'Address of the resource' }
+        }
+    },
+    {
+        name: 'LinkDetailDesignator',
+        ancestor: 'DetailDesignator',
+        properties: {
+            
         }
     },
     {
@@ -196,7 +236,7 @@ export const thinkComposerModel = [
     },
     {
         name: 'MetaDefinition',
-        ancestor: 'FormalElement',
+        ancestor: 'FormalPresentationElement',
         properties: {
             'MetaId': { type: 'Int32', summary: 'Simple identifier for indirectly associate created objects with definitions' }
         }
@@ -240,6 +280,15 @@ export const thinkComposerModel = [
         }
     },
     {
+        name: 'RelationshipVisualRepresentation',
+        ancestor: 'VisualRepresentation',
+        properties: {
+            'RepresentedRelationship': { type: 'Relationship', summary: 'Represented Relationship by this visual element.' },
+            'VisualConnectors': { type: 'IEnumerable<VisualConnector>', summary: 'Gets the visual connectors.' },
+            'VisualConnectorsCount': { type: 'Int32', summary: 'Gets the count of visual connectors.' }
+        }
+    },
+    {
         name: 'ResourceLink',
         ancestor: 'Link',
         properties: {
@@ -269,6 +318,13 @@ export const thinkComposerModel = [
             'Summary': { type: 'String', summary: 'Summary of the object' },
             'TechName': { type: 'String', summary: 'Technical-Name of the object. Should be unique. Intended for machine-level usage as code, identifier or name for files/tables/programs' },
             'TechSpec': { type: 'String', summary: 'Technical-Specification of the object. Intended as a machine-level representation for computation (i.e. for use as script, template, formula or other kind of expression)' }
+        }
+    },
+    {
+        name: 'SimplePresentationElement',
+        ancestor: 'SimpleElement',
+        properties: {
+            'Pictogram': { type: 'ImageSource', summary: 'Graphic representation of the object.' }
         }
     },
     {

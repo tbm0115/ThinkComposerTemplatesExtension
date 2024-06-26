@@ -23,23 +23,56 @@ const getClassDefinition = (className: string, model: any[]) => {
     return model.find(cls => cls.name === className);
 };
 
-const getContextFromCommentsAndAssignments = (document: vscode.TextDocument, position: vscode.Position): Record<string, string> => {
+const inferType = (expression: string, contextMap: Record<string, string>, model: any[]): string | null => {
+    const parts = expression.split('.');
+    let currentType = contextMap[parts[0]] || contextMap["This"];
+    let genericType = '';
+
+    if (!currentType) return null;
+
+    for (const part of parts.slice(1)) {
+        let properties = getInheritedProperties(currentType, model, genericType);
+        currentType = properties[part]?.type || null;
+
+        if (currentType && currentType.includes('<') && currentType.includes('>')) {
+            const match = currentType.match(/<(.+)>/);
+            if (match) {
+                genericType = match[1];
+                currentType = currentType.replace(/<.+>/, '');
+            }
+        }
+
+        if (!currentType) return null;
+    }
+
+    return currentType;
+};
+
+const getContextFromCommentsAndAssignments = (document: vscode.TextDocument, position: vscode.Position, model: any[]): Record<string, string> => {
     const textBeforePosition = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
-    const contextRegex = /{%\s*comment\s*%}\s*This\s*=\s*(\w+)\s*{%\s*endcomment\s*%}/g;
-    const assignRegex = /{%\s*assign\s*(\w+)\s*=\s*(\w+)\s*%}/g;
-    const forLoopRegex = /{%\s*for\s+(\w+)\s+in\s+(\w+)\s*%}/g;
+    const contextRegex = /{%-?\s*comment\s*-?%}([\s\S]*?){%-?\s*endcomment\s*-?%}/g;
+    const assignRegex = /{%-?\s*assign\s*(\w+)\s*=\s*(\w+(?:\.\w+)*)\s*-?%}/g;
+    const forLoopRegex = /{%-?\s*for\s+(\w+)\s+in\s+(\w+(?:\.\w+)*)\s*-?%}/g;
     let match;
-    let lastContext = null;
     const contextMap: Record<string, string> = {};
 
     while ((match = contextRegex.exec(textBeforePosition)) !== null) {
-        lastContext = match[1];
+        const declarations = match[1].split(/\s*;\s*/).filter(decl => decl);
+        declarations.forEach(decl => {
+            const [variable, type] = decl.split(/\s*=\s*/);
+            contextMap[variable.trim()] = type.trim();
+        });
     }
 
-    contextMap["This"] = lastContext;
-
     while ((match = assignRegex.exec(textBeforePosition)) !== null) {
-        contextMap[match[1]] = match[2];
+        const variable = match[1];
+        const expression = match[2];
+        const inferredType = inferType(expression, contextMap, model);
+        if (inferredType) {
+            contextMap[variable] = inferredType;
+        } else {
+            contextMap[variable] = expression;
+        }
     }
 
     while ((match = forLoopRegex.exec(textBeforePosition)) !== null) {
@@ -53,11 +86,9 @@ const getContextFromCommentsAndAssignments = (document: vscode.TextDocument, pos
                     contextMap[variable] = genericMatch[1];
                 }
             } else {
-                // Default fallback if generic type isn't specified
                 contextMap[variable] = 'Object';
             }
         } else {
-            // Default fallback if collection isn't found in the context
             contextMap[variable] = 'Object';
         }
     }
@@ -66,16 +97,26 @@ const getContextFromCommentsAndAssignments = (document: vscode.TextDocument, pos
 };
 
 const getDynamicContext = (text: string, model: any[], contextMap: Record<string, string>): { type: string, genericType: string } | null => {
-    const parts = text.split('.');
-    let currentType = contextMap["This"];
+    // Extract the relevant part of the command chain
+    let startIdx = text.lastIndexOf('{{');
+    if (startIdx === -1) {
+        startIdx = text.search(/{%-?\s*|\s*-?%}/); // Search for '{%' with optional hyphens before or after
+    }
+    startIdx = startIdx !== -1 ? startIdx + 2 : 0;
+
+    const relevantText = text.slice(startIdx).trim();
+    const parts = relevantText.split('.').filter(part => part); // Filter out empty parts
+
+    let currentType = contextMap[parts[0]] || contextMap["This"];
     let genericType = '';
 
-    if (parts[0] in contextMap) {
-        currentType = contextMap[parts[0]];
+    if (!currentType) return null;
+
+    if (parts.length === 1) {
+        return { type: currentType, genericType };
     }
 
     for (const part of parts.slice(1)) {
-        if (!currentType) return null;
         let properties = getInheritedProperties(currentType, model, genericType);
         currentType = properties[part]?.type || null;
 
@@ -86,6 +127,8 @@ const getDynamicContext = (text: string, model: any[], contextMap: Record<string
                 currentType = currentType.replace(/<.+>/, '');
             }
         }
+
+        if (!currentType) return null;
     }
 
     return { type: currentType, genericType };
@@ -97,11 +140,14 @@ export function activate(context: vscode.ExtensionContext) {
         {
             provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
                 const completionItems: vscode.CompletionItem[] = [];
-                const linePrefix = document.lineAt(position).text.substr(0, position.character);
-                const lastDotIndex = linePrefix.lastIndexOf('.');
-                const prefix = lastDotIndex !== -1 ? linePrefix.substr(0, lastDotIndex) : '';
-                const contextMap = getContextFromCommentsAndAssignments(document, position);
-                const currentContextInfo = getDynamicContext(prefix, thinkComposerModel, contextMap);
+                const lineText = document.lineAt(position).text;
+                const linePrefix = lineText.substr(0, position.character);
+                const contextMap = getContextFromCommentsAndAssignments(document, position, thinkComposerModel);
+                const currentContextInfo = getDynamicContext(linePrefix, thinkComposerModel, contextMap);
+
+                console.log(`Line Prefix: ${linePrefix}`);
+                console.log(`Context Map: ${JSON.stringify(contextMap)}`);
+                console.log(`Current Context Info: ${JSON.stringify(currentContextInfo)}`);
 
                 if (currentContextInfo) {
                     const { type: currentContext, genericType } = currentContextInfo;
@@ -136,7 +182,10 @@ export function activate(context: vscode.ExtensionContext) {
                 return completionItems;
             }
         },
-        '.' // Trigger completion after a dot
+        '.',
+        '{',
+        '%',
+        ' ' // Trigger completion after a dot, braces, and spaces to capture all relevant contexts
     );
 
     context.subscriptions.push(completionProvider);
